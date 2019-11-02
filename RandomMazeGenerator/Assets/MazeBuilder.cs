@@ -15,7 +15,7 @@ public class MazeBuilder : MonoBehaviour
         int y = 99;
         Point start = startPoint(x, y);
         Point end = endPoint(x, y, start);
-        deadEndPoints(x, y, deadEnds(x, y, 3), start, end);
+        initializeMaze(x, y, start, end, deadEndPoints(x, y, deadEnds(x, y, 3), start, end));
         */
     }
 
@@ -55,15 +55,32 @@ public class MazeBuilder : MonoBehaviour
     {
 
     }
-
+    */
     // Helper Functions
 
     // Returns an initialized maze with start, end, and dead end points
-    int[,] initializeMaze(Point start, Point end, Point[] deadEnds)
+    // x & y are the maze's size
+    int[,] initializeMaze(int x, int y, Point start, Point end, Point[] deadEnds)
     {
-
+        int[,] maze = new int[x, y];
+        maze[start.x, start.y] = 1; // 1 represents startPoint
+        maze[end.x, end.y] = 2; // 2 represents endPoint
+        for (int i = 0; i < deadEnds.Length; ++i)
+        {
+            maze[deadEnds[i].x, deadEnds[i].y] = 3; // 3 represents deadEnds
+        }
+        /* 
+        for (int j = 0; j < x; ++j)
+        {
+            for (int h = 0; h < y; ++h)
+            {
+                Debug.Log(maze[j, h]);
+            }
+        }
+        */
+        return maze;
     }
-    */
+    
     // Returns the number of dead ends in the maze
     // x & y are the size of the maze; d is the difficulty
     int deadEnds(int x, int y, int d)
