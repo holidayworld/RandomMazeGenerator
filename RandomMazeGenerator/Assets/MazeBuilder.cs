@@ -27,6 +27,14 @@ public class MazeBuilder : MonoBehaviour
         ending.y = 3;
         Debug.Log(canReach(test, begin, ending));
         */
+        int[,] testMaze = designMaze(150, 150, 1);
+        for (int i = 0; i < testMaze.GetLength(0); ++i)
+        {
+            for (int j = 0; j < testMaze.GetLength(1); ++j)
+            {
+                Debug.Log("(" + i + ", " + j + "): " + testMaze[i, j]);
+            }
+        }
     }
 
     // Struct to make coordinate data easier to manage
@@ -46,7 +54,7 @@ public class MazeBuilder : MonoBehaviour
     // Random number variable to be used repeatedly
     System.Random rand = new System.Random();
 
-    /*
+    
     // Main Functions
 
     // Designs the maze behind the scenes
@@ -56,9 +64,45 @@ public class MazeBuilder : MonoBehaviour
     // d is maze difficulty
     int[,] designMaze(int x, int y, int d)
     {
+        // Initialization of the maze
+        Point start = startPoint(x, y);
+        Point end = endPoint(x, y, start);
+        int numDeadEnds = deadEnds(x, y, d);
+        Point[] deadEndsLocations = deadEndPoints(x, y, numDeadEnds, start, end);
+        int[,] maze = initializeMaze(x, y, start, end, deadEndsLocations);
 
+        // Populate the maze with walls
+        // 1st method is placing walls in order; 2nd method (in future) will be placing walls randomly
+        for (int i = 0; i < x; ++i)
+        {
+            for (int j = 0; j < y; ++j)
+            {
+                if (maze[i, j] == 0) // Point that hasn't been set yet
+                {
+                    maze[i, j] = 4; // Try to make it a wall
+                    // Check to see if end and dead ends can still be reached from start
+                    if (!canReach(maze, start, end))
+                    {
+                        maze[i, j] = 0;
+                    }
+                    else
+                    {
+                        bool failedOnce = false; // Used to short circuit following if statement to increase efficiency
+                        for (int h = 0; h < deadEndsLocations.Length; ++h)
+                        {
+                            if (!failedOnce && !canReach(maze, start, deadEndsLocations[h]))
+                            {
+                                maze[i, j] = 0;
+                                failedOnce = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return maze;
     }
-
+    /*
     // Builds the maze visually in Unity
     // maze is the designed maze
     void createMaze(int[,] maze)
@@ -197,8 +241,8 @@ public class MazeBuilder : MonoBehaviour
     {
         // Mark point as visited
         visited[start.x, start.y] = 1;
-        Debug.Log(start.x);
-        Debug.Log(start.y);
+        // Debug.Log(start.x);
+        // Debug.Log(start.y);
 
         // Recursively call for adjacent points
         if (isValidPoint(start.x + 1, start.y, maze)) // moving right
