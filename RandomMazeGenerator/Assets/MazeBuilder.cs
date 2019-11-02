@@ -27,14 +27,17 @@ public class MazeBuilder : MonoBehaviour
         ending.y = 3;
         Debug.Log(canReach(test, begin, ending));
         */
-        int[,] testMaze = designMaze(150, 150, 1);
+        /* 
+        int[,] testMaze = designMaze(100, 100, 1);
         for (int i = 0; i < testMaze.GetLength(0); ++i)
         {
             for (int j = 0; j < testMaze.GetLength(1); ++j)
             {
-                Debug.Log("(" + i + ", " + j + "): " + testMaze[i, j]);
+                // Debug.Log("(" + i + ", " + j + "): " + testMaze[i, j]);
+                // Debug.Log(testMaze[i, j]);
             }
         }
+        */
     }
 
     // Struct to make coordinate data easier to manage
@@ -224,6 +227,75 @@ public class MazeBuilder : MonoBehaviour
     // implementation initially as DFS (will optimize later)
     bool canReach(int[,] maze, Point start, Point end)
     {
+        // Iterative DFS
+        int[,] visited = new int[maze.GetLength(0), maze.GetLength(1)];
+        Stack xStack = new Stack();
+        Stack yStack = new Stack();
+        xStack.Push(start.x);
+        yStack.Push(start.y);
+        while (xStack.Count != 0)
+        {
+            // Work on point from top of stack
+            int xTemp = (int)xStack.Pop();
+            int yTemp = (int)yStack.Pop();
+            if (visited[xTemp, yTemp] == 0)
+            {
+                visited[xTemp, yTemp] = 1;
+            }
+            // Push adjacent points onto stack
+            if (isValidPoint(xTemp + 1, yTemp, maze)) // moving right
+            {
+                Point pathPart;
+                pathPart.x = xTemp + 1;
+                pathPart.y = yTemp;
+                if (visited[pathPart.x, pathPart.y] == 0)
+                {
+                    xStack.Push(pathPart.x);
+                    yStack.Push(pathPart.y);
+                }
+            }
+            if (isValidPoint(xTemp - 1, yTemp, maze)) // moving left
+            {
+                Point pathPart;
+                pathPart.x = xTemp - 1;
+                pathPart.y = yTemp;
+                if (visited[pathPart.x, pathPart.y] == 0)
+                {
+                    xStack.Push(pathPart.x);
+                    yStack.Push(pathPart.y);
+                }
+            }
+            if (isValidPoint(xTemp, yTemp + 1, maze)) // moving up
+            {
+                Point pathPart;
+                pathPart.x = xTemp;
+                pathPart.y = yTemp + 1;
+                if (visited[pathPart.x, pathPart.y] == 0)
+                {
+                    xStack.Push(pathPart.x);
+                    yStack.Push(pathPart.y);
+                }
+            }
+            if (isValidPoint(xTemp, yTemp - 1, maze)) // moving down
+            {
+                Point pathPart;
+                pathPart.x = xTemp;
+                pathPart.y = yTemp - 1;
+                if (visited[pathPart.x, pathPart.y] == 0)
+                {
+                    xStack.Push(pathPart.x);
+                    yStack.Push(pathPart.y);
+                }
+            }
+        }
+        // If end point was visited, then a path from start to end exists
+        if (visited[end.x, end.y] == 1) 
+        {
+            return true;
+        }
+        return false;
+
+        /* Recursive DFS 
         int[,] visited = new int[maze.GetLength(0), maze.GetLength(1)];
         canReachHelper(start, ref visited, maze);
         // If end point was visited, then a path from start to end exists
@@ -232,8 +304,10 @@ public class MazeBuilder : MonoBehaviour
             return true;
         }
         return false;
+        */
     }  
 
+    /* Commented out for now because recursive DFS is giving a call stack overflow error past a certain maze size
     // Helper function for DFS search in canReach
     // start is the point the function is currently on
     // visited is the 2D array determining if a point has been visited
@@ -286,6 +360,7 @@ public class MazeBuilder : MonoBehaviour
             }
         }
     }
+    */
 
     // Determines if a point is in the maze and not a wall
     // x & y represent the point's coordinates
