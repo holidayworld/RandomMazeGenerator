@@ -17,6 +17,16 @@ public class MazeBuilder : MonoBehaviour
         Point end = endPoint(x, y, start);
         initializeMaze(x, y, start, end, deadEndPoints(x, y, deadEnds(x, y, 3), start, end));
         */
+        /* 
+        int[,] test = new int[4, 4] { {0, 0, 4, 0}, {4, 0, 4, 0}, {0, 0, 4, 0}, {0, 0, 0, 4} };
+        Point begin;
+        begin.x = 3;
+        begin.y = 0;
+        Point ending;
+        ending.x = 0;
+        ending.y = 3;
+        Debug.Log(canReach(test, begin, ending));
+        */
     }
 
     // Struct to make coordinate data easier to manage
@@ -170,16 +180,75 @@ public class MazeBuilder : MonoBehaviour
     // implementation initially as DFS (will optimize later)
     bool canReach(int[,] maze, Point start, Point end)
     {
-        Stack myStack = new Stack();
-        
+        int[,] visited = new int[maze.GetLength(0), maze.GetLength(1)];
+        canReachHelper(start, ref visited, maze);
+        // If end point was visited, then a path from start to end exists
+        if (visited[end.x, end.y] == 1) 
+        {
+            return true;
+        }
+        return false;
     }  
 
-    // Determines if a point is in the maze
+    // Helper function for DFS search in canReach
+    // start is the point the function is currently on
+    // visited is the 2D array determining if a point has been visited
+    void canReachHelper(Point start, ref int[,] visited, int[,] maze)
+    {
+        // Mark point as visited
+        visited[start.x, start.y] = 1;
+        Debug.Log(start.x);
+        Debug.Log(start.y);
+
+        // Recursively call for adjacent points
+        if (isValidPoint(start.x + 1, start.y, maze)) // moving right
+        {
+            Point pathPart;
+            pathPart.x = start.x + 1;
+            pathPart.y = start.y;
+            if (visited[pathPart.x, pathPart.y] == 0)
+            {
+                canReachHelper(pathPart, ref visited, maze);
+            }
+        }
+        if (isValidPoint(start.x - 1, start.y, maze)) // moving left
+        {
+            Point pathPart;
+            pathPart.x = start.x - 1;
+            pathPart.y = start.y;
+            if (visited[pathPart.x, pathPart.y] == 0)
+            {
+                canReachHelper(pathPart, ref visited, maze);
+            }
+        }
+        if (isValidPoint(start.x, start.y + 1, maze)) // moving up
+        {
+            Point pathPart;
+            pathPart.x = start.x;
+            pathPart.y = start.y + 1;
+            if (visited[pathPart.x, pathPart.y] == 0)
+            {
+                canReachHelper(pathPart, ref visited, maze);
+            }
+        }
+        if (isValidPoint(start.x, start.y - 1, maze)) // moving down
+        {
+            Point pathPart;
+            pathPart.x = start.x;
+            pathPart.y = start.y - 1;
+            if (visited[pathPart.x, pathPart.y] == 0)
+            {
+                canReachHelper(pathPart, ref visited, maze);
+            }
+        }
+    }
+
+    // Determines if a point is in the maze and not a wall
     // x & y represent the point's coordinates
     // maze is the current maze
     bool isValidPoint(int x, int y, int[,] maze)
     {
-        if (x < maze.GetLength(0) && y < maze.GetLength(1))
+        if (x < maze.GetLength(0) && y < maze.GetLength(1) && x > -1 && y > -1 && maze[x, y] != 4) // 4 represents walls
         {
             return true;
         }
