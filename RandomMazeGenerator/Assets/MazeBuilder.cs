@@ -163,14 +163,26 @@ public class MazeBuilder : MonoBehaviour
         // Debug.Log(coord.y);
         return coord;
     }
-    /*
-    // Returns true & the path if you can reach end from start
+    
+    // Returns true (& the path when I optimize later) if you can reach end from start
     // maze is the maze initialized maze
     // start and end are the test points for a possible path 
     // implementation initially as DFS (will optimize later)
-    Path canReach(int[,] maze, Point start, Point end)
+    bool canReach(int[,] maze, Point start, Point end)
     {
-
+        Stack myStack = new Stack();
+        
     }  
-    */   
+
+    // Determines if a point is in the maze
+    // x & y represent the point's coordinates
+    // maze is the current maze
+    bool isValidPoint(int x, int y, int[,] maze)
+    {
+        if (x < maze.GetLength(0) && y < maze.GetLength(1))
+        {
+            return true;
+        }
+        return false;
+    }
 }
