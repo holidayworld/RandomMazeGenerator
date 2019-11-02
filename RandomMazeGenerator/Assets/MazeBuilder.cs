@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,22 +8,27 @@ public class MazeBuilder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        // endPoint(5, 5, startPoint(5, 5));
     }
 
     // Struct to make coordinate data easier to manage
-    struct Point
+    public struct Point
     {
-        int x; // x-axis
-        int y; // y-axis
-    }
-    // Struct to make canReach() method return data more informative
-    struct Path
-    {
-        bool reachable; // can the 2 points reach each other
-        Point[] path; // the path from point a to b (if one exists)
+        public int x; // x-axis
+        public int y; // y-axis
     }
 
+    // Struct to make canReach() method return data more informative
+    public struct Path
+    {
+        public bool reachable; // can the 2 points reach each other
+        public Point[] path; // the path from point a to b (if one exists)
+    }
+
+    // Random number variable to be used repeatedly
+    System.Random rand = new System.Random();
+
+    /*
     // Main Functions
 
     // Designs the maze behind the scenes
@@ -64,12 +70,17 @@ public class MazeBuilder : MonoBehaviour
     {
 
     }
-
+    */
     // Returns the randomized start position in the maze
     // x & y are the maze's size
     Point startPoint(int x, int y)
     {
-
+        Point coord;
+        coord.x = rand.Next(0, x);
+        coord.y = rand.Next(0, y);
+        // Debug.Log(coord.x);
+        // Debug.Log(coord.y);
+        return coord;
     }
 
     // Returns the randomized end position in the maze
@@ -77,9 +88,19 @@ public class MazeBuilder : MonoBehaviour
     // startPoint to avoid duplicate spots being chosen
     Point endPoint(int x, int y, Point startPoint)
     {
-
+        Point coord;
+        coord.x = rand.Next(0, x);
+        coord.y = rand.Next(0, y);
+        while (startPoint.x == coord.x && startPoint.y == coord.y)
+        {
+            coord.x = rand.Next(0, x);
+            coord.y = rand.Next(0, y);
+        }
+        // Debug.Log(coord.x);
+        // Debug.Log(coord.y);
+        return coord;
     }
-
+    /*
     // Returns true & the path if you can reach end from start
     // maze is the maze initialized maze
     // start and end are the test points for a possible path 
@@ -87,5 +108,6 @@ public class MazeBuilder : MonoBehaviour
     Path canReach(int[,] maze, Point start, Point end)
     {
 
-    }     
+    }  
+    */   
 }
