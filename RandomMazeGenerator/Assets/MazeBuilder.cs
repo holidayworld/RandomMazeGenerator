@@ -27,8 +27,9 @@ public class MazeBuilder : MonoBehaviour
         ending.y = 3;
         Debug.Log(canReach(test, begin, ending));
         */
+        
+        int[,] testMaze = designMaze(50, 50, 1);
         /* 
-        int[,] testMaze = designMaze(100, 100, 1);
         for (int i = 0; i < testMaze.GetLength(0); ++i)
         {
             for (int j = 0; j < testMaze.GetLength(1); ++j)
@@ -38,6 +39,9 @@ public class MazeBuilder : MonoBehaviour
             }
         }
         */
+        createMaze(testMaze);
+
+        
     }
 
     // Struct to make coordinate data easier to manage
@@ -56,6 +60,16 @@ public class MazeBuilder : MonoBehaviour
 
     // Random number variable to be used repeatedly
     System.Random rand = new System.Random();
+
+    // Size of the block component that makes up the maze
+    const float blockX = 5f;
+    const float blockY = 5f;
+    const float blockZ = 5f;
+
+    // Initial position in maze
+    const float positX = 2.5f;
+    const float positY = 2.5f;
+    const float positZ = 2.5f;
 
     
     // Main Functions
@@ -105,14 +119,33 @@ public class MazeBuilder : MonoBehaviour
         }
         return maze;
     }
-    /*
+    
     // Builds the maze visually in Unity
     // maze is the designed maze
     void createMaze(int[,] maze)
     {
+        /* 
+        GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        floor.transform.position = new Vector3(15f, 2.5f, 11f);
+        floor.transform.localScale = new Vector3(5, 5, 5);
+        */
 
+        for (int i = 0; i < maze.GetLength(0); ++i)
+        {
+            for (int j = 0; j < maze.GetLength(1); ++j)
+            {
+                if (maze[i, j] == 4) // Point is a wall
+                {
+                    float xPosition = positX + (j * blockX);
+                    float zPosition = positZ + (i * blockZ);
+                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    wall.transform.localScale = new Vector3(blockX, blockY, blockZ);
+                    wall.transform.position = new Vector3(xPosition, positY, zPosition);
+                }
+            }
+        }
     }
-    */
+    
     // Helper Functions
 
     // Returns an initialized maze with start, end, and dead end points
@@ -151,7 +184,7 @@ public class MazeBuilder : MonoBehaviour
         }
         else if (x < 100 || y < 100)
         {
-            deadEnds = 1 + d;
+            deadEnds = 1 + 20;
         }
         else
         {
