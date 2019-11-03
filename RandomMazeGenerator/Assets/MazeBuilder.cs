@@ -39,9 +39,7 @@ public class MazeBuilder : MonoBehaviour
             }
         }
         */
-        createMaze(testMaze);
-
-        
+        createMaze(testMaze);   
     }
 
     // Struct to make coordinate data easier to manage
@@ -90,17 +88,18 @@ public class MazeBuilder : MonoBehaviour
 
         // Populate the maze with walls
         // 1st method is placing walls in order; 2nd method (in future) will be placing walls randomly
+        Point[,] shuffledMaze = shuffle(maze);
         for (int i = 0; i < x; ++i)
         {
             for (int j = 0; j < y; ++j)
             {
-                if (maze[i, j] == 0) // Point that hasn't been set yet
+                if (maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] == 0) // Point that hasn't been set yet
                 {
-                    maze[i, j] = 4; // Try to make it a wall
+                    maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] = 4; // Try to make it a wall
                     // Check to see if end and dead ends can still be reached from start
                     if (!canReach(maze, start, end))
                     {
-                        maze[i, j] = 0;
+                        maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] = 0;
                     }
                     else
                     {
@@ -109,7 +108,7 @@ public class MazeBuilder : MonoBehaviour
                         {
                             if (!failedOnce && !canReach(maze, start, deadEndsLocations[h]))
                             {
-                                maze[i, j] = 0;
+                                maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] = 0;
                                 failedOnce = true;
                             }
                         }
@@ -141,6 +140,26 @@ public class MazeBuilder : MonoBehaviour
                     GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     wall.transform.localScale = new Vector3(blockX, blockY, blockZ);
                     wall.transform.position = new Vector3(xPosition, positY, zPosition);
+                }
+                if (maze[i, j] == 1) // Point is the start
+                {
+                    float xPosition = positX + (j * blockX);
+                    float zPosition = positZ + (i * blockZ);
+                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    wall.transform.localScale = new Vector3(1, 1, 1);
+                    wall.transform.position = new Vector3(xPosition, positY, zPosition);
+                    wall.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
+                    GameObject playableCharacter = GameObject.Find("FPSController");
+                    playableCharacter.transform.position = new Vector3(xPosition, positY, zPosition);
+                }
+                if (maze[i, j] == 2) // Point is the end
+                {
+                    float xPosition = positX + (j * blockX);
+                    float zPosition = positZ + (i * blockZ);
+                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    wall.transform.localScale = new Vector3(1, 1, 1);
+                    wall.transform.position = new Vector3(xPosition, positY, zPosition);
+                    wall.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
                 }
             }
         }
@@ -405,5 +424,35 @@ public class MazeBuilder : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    // Returns a maze with shuffled points to assist in randomization when placing walls
+    Point[,] shuffle(int[,] maze)
+    {
+        // Fill shuffled
+        Point[,] shuffled = new Point[maze.GetLength(0), maze.GetLength(1)];
+        for (int i = 0; i < shuffled.GetLength(0); ++i)
+        {
+            for (int j = 0; j < shuffled.GetLength(1); ++j)
+            {
+                Point temp;
+                temp.x = i;
+                temp.y = j;
+                shuffled[i, j] = temp;
+            }
+        }
+        // Shuffle Shuffled
+        for (int i = 0; i < shuffled.GetLength(0); ++i)
+        {
+            for (int j = 0; j < shuffled.GetLength(1); ++j)
+            {
+                Point temp = shuffled[i, j];
+                int randX = rand.Next(0, shuffled.GetLength(0));
+                int randY = rand.Next(0, shuffled.GetLength(1));
+                shuffled[i, j] = shuffled[randX, randY];
+                shuffled[randX, randY] = temp;
+            }
+        }
+        return shuffled;
     }
 }
