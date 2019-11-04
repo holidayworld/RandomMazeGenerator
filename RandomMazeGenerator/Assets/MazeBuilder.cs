@@ -18,17 +18,24 @@ public class MazeBuilder : MonoBehaviour
         initializeMaze(x, y, start, end, deadEndPoints(x, y, deadEnds(x, y, 3), start, end));
         */
         /* 
-        int[,] test = new int[4, 4] { {0, 0, 4, 0}, {4, 0, 4, 0}, {0, 0, 4, 0}, {0, 0, 0, 4} };
+        int[,] test = new int[4, 4] { {0, 0, 0, 0}, {4, 0, 4, 0}, {1, 1, 4, 0}, {1, 0, 0, 4} };
         Point begin;
         begin.x = 3;
         begin.y = 0;
         Point ending;
         ending.x = 0;
         ending.y = 3;
-        Debug.Log(canReach(test, begin, ending));
+        // Debug.Log(isCube(test, begin, ending));
+         
+        Path test2 = canReach(test, begin, ending);
+        // Debug.Log(test2.reachable);
+        Debug.Log(test2.path.Length);
+         
+        for (int i = 0; i < test2.path.Length; ++i)
+        {
+            Debug.Log(test2.path[i].x + " " + test2.path[i].y);
+        }
         */
-        
-        int[,] testMaze = designMaze(50, 50, 1);
         /* 
         for (int i = 0; i < testMaze.GetLength(0); ++i)
         {
@@ -39,6 +46,7 @@ public class MazeBuilder : MonoBehaviour
             }
         }
         */
+        int[,] testMaze = designMaze(100, 100, 1);
         createMaze(testMaze);   
     }
 
@@ -77,6 +85,7 @@ public class MazeBuilder : MonoBehaviour
     // x is maze width
     // y is maze length
     // d is maze difficulty
+    
     int[,] designMaze(int x, int y, int d)
     {
         // Initialization of the maze
@@ -88,36 +97,37 @@ public class MazeBuilder : MonoBehaviour
 
         // Populate the maze with walls
         // 1st method is placing walls in order; 2nd method (in future) will be placing walls randomly
-        Point[,] shuffledMaze = shuffle(maze);
+        Path startToEnd = canReach(maze, start, end);
+        Path[] startToDeadEnds = new Path[numDeadEnds];
+        for (int i = 0; i < numDeadEnds; ++i)
+        {
+            startToDeadEnds[i] = canReach(maze, start, deadEndsLocations[i]);
+        }
+        int[,] definedPaths = new int[maze.GetLength(0), maze.GetLength(1)];
+        for (int i = 0; i < startToEnd.path.Length; ++i)
+        {
+            definedPaths[startToEnd.path[i].x, startToEnd.path[i].y] = 1;
+        }
+        for (int i = 0; i < startToDeadEnds.Length; ++i)
+        {
+            for (int j = 0; j < startToDeadEnds[i].path.Length; ++j)
+            {
+                definedPaths[startToDeadEnds[i].path[j].x, startToDeadEnds[i].path[j].y] = 1;
+            }
+        }
         for (int i = 0; i < x; ++i)
         {
             for (int j = 0; j < y; ++j)
             {
-                if (maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] == 0) // Point that hasn't been set yet
+                if (definedPaths[i, j] == 0) // Point that hasn't been set yet
                 {
-                    maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] = 4; // Try to make it a wall
-                    // Check to see if end and dead ends can still be reached from start
-                    if (!canReach(maze, start, end))
-                    {
-                        maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] = 0;
-                    }
-                    else
-                    {
-                        bool failedOnce = false; // Used to short circuit following if statement to increase efficiency
-                        for (int h = 0; h < deadEndsLocations.Length; ++h)
-                        {
-                            if (!failedOnce && !canReach(maze, start, deadEndsLocations[h]))
-                            {
-                                maze[shuffledMaze[i, j].x, shuffledMaze[i, j].y] = 0;
-                                failedOnce = true;
-                            }
-                        }
-                    }
+                    maze[i, j] = 4; // Try to make it a wall
                 }
             }
         }
         return maze;
     }
+    
     
     // Builds the maze visually in Unity
     // maze is the designed maze
@@ -143,17 +153,19 @@ public class MazeBuilder : MonoBehaviour
                 }
                 if (maze[i, j] == 1) // Point is the start
                 {
+                    // Sets red cube as start point
                     float xPosition = positX + (j * blockX);
                     float zPosition = positZ + (i * blockZ);
                     GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     wall.transform.localScale = new Vector3(1, 1, 1);
                     wall.transform.position = new Vector3(xPosition, positY, zPosition);
                     wall.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
-                    GameObject playableCharacter = GameObject.Find("FPSController");
-                    playableCharacter.transform.position = new Vector3(xPosition, positY, zPosition);
+                    // GameObject playableCharacter = GameObject.Find("FirstPersonCharacter");
+                    // playableCharacter.transform.position = new Vector3(xPosition, positY, zPosition);
                 }
                 if (maze[i, j] == 2) // Point is the end
                 {
+                    // Sets blue cube as end point
                     float xPosition = positX + (j * blockX);
                     float zPosition = positZ + (i * blockZ);
                     GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -203,7 +215,7 @@ public class MazeBuilder : MonoBehaviour
         }
         else if (x < 100 || y < 100)
         {
-            deadEnds = 1 + 20;
+            deadEnds = 1 + 100;
         }
         else
         {
@@ -277,75 +289,345 @@ public class MazeBuilder : MonoBehaviour
     // maze is the maze initialized maze
     // start and end are the test points for a possible path 
     // implementation initially as DFS (will optimize later)
-    bool canReach(int[,] maze, Point start, Point end)
+    Path canReach(int[,] maze, Point start, Point end)
     {
         // Iterative DFS
         int[,] visited = new int[maze.GetLength(0), maze.GetLength(1)];
         Stack xStack = new Stack();
         Stack yStack = new Stack();
+        // Stacks representing the points in the path from start to end
+        Stack myPathX = new Stack();
+        Stack myPathY = new Stack();
         xStack.Push(start.x);
         yStack.Push(start.y);
-        while (xStack.Count != 0)
-        {
-            // Work on point from top of stack
-            int xTemp = (int)xStack.Pop();
-            int yTemp = (int)yStack.Pop();
-            if (visited[xTemp, yTemp] == 0)
+        myPathX.Push(start.x);
+        myPathY.Push(start.y);
+        try {
+            while (visited[end.x, end.y] != 1)
             {
-                visited[xTemp, yTemp] = 1;
-            }
-            // Push adjacent points onto stack
-            if (isValidPoint(xTemp + 1, yTemp, maze)) // moving right
-            {
-                Point pathPart;
-                pathPart.x = xTemp + 1;
-                pathPart.y = yTemp;
-                if (visited[pathPart.x, pathPart.y] == 0)
+                // Work on point from top of stack
+                int popPath = 0; // If this is 0 after the 4 isValidPoint calls, then pop from myPath stacks
+                int xTemp = (int)xStack.Pop();
+                int yTemp = (int)yStack.Pop();
+                if (visited[xTemp, yTemp] == 0)
                 {
-                    xStack.Push(pathPart.x);
-                    yStack.Push(pathPart.y);
+                    visited[xTemp, yTemp] = 1;
                 }
-            }
-            if (isValidPoint(xTemp - 1, yTemp, maze)) // moving left
-            {
-                Point pathPart;
-                pathPart.x = xTemp - 1;
-                pathPart.y = yTemp;
-                if (visited[pathPart.x, pathPart.y] == 0)
+                Point curr, endU, endD, endR, endL; // end up, end down, etc...
+                    curr.x = xTemp;
+                    curr.y = yTemp;
+                    endU.x = xTemp - 1;
+                    endU.y = yTemp;
+                    endD.x = xTemp + 1;
+                    endD.y = yTemp;
+                    endR.x = xTemp;
+                    endR.y = yTemp + 1;
+                    endL.x = xTemp;
+                    endL.y = yTemp - 1;
+                int randPath = rand.Next(0, 4); // Helps to randomize the path from start to end
+                // Push adjacent points onto stack
+                if (randPath == 0)
                 {
-                    xStack.Push(pathPart.x);
-                    yStack.Push(pathPart.y);
+                    if (isValidPoint(xTemp - 1, yTemp, maze) && visited[xTemp - 1, yTemp] != 1 && !isCube(visited, curr, endU)) // moving up
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp - 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1) 
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp, yTemp + 1, maze) && visited[xTemp, yTemp + 1] != 1 && !isCube(visited, curr, endR)) // moving right
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp + 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp, yTemp - 1, maze) && visited[xTemp, yTemp - 1] != 1 && !isCube(visited, curr, endL)) // moving left
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp - 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                            
+                        }
+                    }
+                    else if (isValidPoint(xTemp + 1, yTemp, maze) && visited[xTemp + 1, yTemp] != 1 && !isCube(visited, curr, endD)) // moving down
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp + 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    // Debug.Log(xTemp + " " + yTemp + " " + popPath);
+                    if (popPath == 0)
+                    {
+                        // visited[(int)myPathX.Pop(), (int)myPathY.Pop()] = 0;
+                        myPathX.Pop();
+                        myPathY.Pop();
+                    }
                 }
-            }
-            if (isValidPoint(xTemp, yTemp + 1, maze)) // moving up
-            {
-                Point pathPart;
-                pathPart.x = xTemp;
-                pathPart.y = yTemp + 1;
-                if (visited[pathPart.x, pathPart.y] == 0)
+                else if (randPath == 1)
                 {
-                    xStack.Push(pathPart.x);
-                    yStack.Push(pathPart.y);
+                    if (isValidPoint(xTemp, yTemp + 1, maze) && visited[xTemp, yTemp + 1] != 1 && !isCube(visited, curr, endR)) // moving right
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp + 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp, yTemp - 1, maze) && visited[xTemp, yTemp - 1] != 1 && !isCube(visited, curr, endL)) // moving left
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp - 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                            
+                        }
+                    }
+                    else if (isValidPoint(xTemp + 1, yTemp, maze) && visited[xTemp + 1, yTemp] != 1 && !isCube(visited, curr, endD)) // moving down
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp + 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp - 1, yTemp, maze) && visited[xTemp - 1, yTemp] != 1 && !isCube(visited, curr, endU)) // moving up
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp - 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    // Debug.Log(xTemp + " " + yTemp + " " + popPath);
+                    if (popPath == 0)
+                    {
+                        // visited[(int)myPathX.Pop(), (int)myPathY.Pop()] = 0;
+                        myPathX.Pop();
+                        myPathY.Pop();
+                    }
                 }
-            }
-            if (isValidPoint(xTemp, yTemp - 1, maze)) // moving down
-            {
-                Point pathPart;
-                pathPart.x = xTemp;
-                pathPart.y = yTemp - 1;
-                if (visited[pathPart.x, pathPart.y] == 0)
+                else if (randPath == 2)
                 {
-                    xStack.Push(pathPart.x);
-                    yStack.Push(pathPart.y);
+                    if (isValidPoint(xTemp, yTemp - 1, maze) && visited[xTemp, yTemp - 1] != 1 && !isCube(visited, curr, endL)) // moving left
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp - 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                            
+                        }
+                    }
+                    else if (isValidPoint(xTemp + 1, yTemp, maze) && visited[xTemp + 1, yTemp] != 1 && !isCube(visited, curr, endD)) // moving down
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp + 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp - 1, yTemp, maze) && visited[xTemp - 1, yTemp] != 1 && !isCube(visited, curr, endU)) // moving up
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp - 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp, yTemp + 1, maze) && visited[xTemp, yTemp + 1] != 1 && !isCube(visited, curr, endR)) // moving right
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp + 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }    
+                    // Debug.Log(xTemp + " " + yTemp + " " + popPath);
+                    if (popPath == 0)
+                    {
+                        // visited[(int)myPathX.Pop(), (int)myPathY.Pop()] = 0;
+                        myPathX.Pop();
+                        myPathY.Pop();
+                    }
+                }
+                else if (randPath == 3)
+                {
+                    if (isValidPoint(xTemp + 1, yTemp, maze) && visited[xTemp + 1, yTemp] != 1 && !isCube(visited, curr, endD)) // moving down
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp + 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp - 1, yTemp, maze) && visited[xTemp - 1, yTemp] != 1 && !isCube(visited, curr, endU)) // moving up
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp - 1;
+                        pathPart.y = yTemp;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp, yTemp + 1, maze) && visited[xTemp, yTemp + 1] != 1 && !isCube(visited, curr, endR)) // moving right
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp + 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                        }
+                    }
+                    else if (isValidPoint(xTemp, yTemp - 1, maze) && visited[xTemp, yTemp - 1] != 1 && !isCube(visited, curr, endL)) // moving left
+                    {
+                        Point pathPart;
+                        pathPart.x = xTemp;
+                        pathPart.y = yTemp - 1;
+                        if (visited[pathPart.x, pathPart.y] == 0 && visited[end.x, end.y] != 1)
+                        {
+                            visited[pathPart.x, pathPart.y] = 1;
+                            popPath++;
+                            xStack.Push(pathPart.x);
+                            yStack.Push(pathPart.y);
+                            myPathX.Push(pathPart.x);
+                            myPathY.Push(pathPart.y);
+                            
+                        }
+                    }
+                    // Debug.Log(xTemp + " " + yTemp + " " + popPath);
+                    if (popPath == 0)
+                    {
+                        // visited[(int)myPathX.Pop(), (int)myPathY.Pop()] = 0;
+                        myPathX.Pop();
+                        myPathY.Pop();
+                    }
                 }
             }
         }
-        // If end point was visited, then a path from start to end exists
-        if (visited[end.x, end.y] == 1) 
+        catch (InvalidOperationException e) 
         {
-            return true;
+            // Debug.Log("Fails");
+            // canReach(maze, start, end);
         }
-        return false;
+        // Building and returning path from start to end
+        Path pathExists;
+        pathExists.reachable = true;
+        pathExists.path = new Point[myPathX.Count];
+        for (int i = 0; i < pathExists.path.Length; ++i)
+        {
+            pathExists.path[i].x = (int)myPathX.Pop();
+            pathExists.path[i].y = (int)myPathY.Pop();
+        }
+        return pathExists;
+
 
         /* Recursive DFS 
         int[,] visited = new int[maze.GetLength(0), maze.GetLength(1)];
@@ -414,12 +696,12 @@ public class MazeBuilder : MonoBehaviour
     }
     */
 
-    // Determines if a point is in the maze and not a wall
+    // Determines if a point is in the maze
     // x & y represent the point's coordinates
     // maze is the current maze
     bool isValidPoint(int x, int y, int[,] maze)
     {
-        if (x < maze.GetLength(0) && y < maze.GetLength(1) && x > -1 && y > -1 && maze[x, y] != 4) // 4 represents walls
+        if (x < maze.GetLength(0) && y < maze.GetLength(1) && x > -1 && y > -1)
         {
             return true;
         }
@@ -454,5 +736,36 @@ public class MazeBuilder : MonoBehaviour
             }
         }
         return shuffled;
+    }
+
+    // Returns true if adding the end point to the path will result in a cube (4 points all touching)
+    // A maze is a visited binary maze used to determine if cubes exist
+    bool isCube(int[,] maze, Point start, Point end)
+    {
+        /* 
+        if ((isValidPoint(end.x - 1, end.y, maze) && maze[end.x - 1, end.y] == 1) &&
+        (isValidPoint(end.x, end.y - 1, maze) && maze[end.x, end.y - 1] == 1) &&
+        (isValidPoint(end.x - 1, end.y - 1, maze) && maze[end.x - 1, end.y - 1] == 1))
+        {
+            return true;
+        }
+        if ((isValidPoint(end.x - 1, end.y, maze) && maze[end.x - 1, end.y] == 1) &&
+        (isValidPoint(end.x, end.y + 1, maze) && maze[end.x, end.y + 1] == 1) &&
+        (isValidPoint(end.x - 1, end.y + 1, maze) && maze[end.x - 1, end.y + 1] == 1))
+        {
+            return true;
+        }
+        if ((isValidPoint(end.x, end.y - 1, maze) && maze[end.x, end.y - 1] == 1) &&
+        (isValidPoint(end.x + 1, end.y - 1, maze) && maze[end.x + 1, end.y - 1] == 1))
+        {
+            return true;
+        }
+        if ((isValidPoint(end.x, end.y + 1, maze) && maze[end.x, end.y + 1] == 1) &&
+        (isValidPoint(end.x + 1, end.y + 1, maze) && maze[end.x + 1, end.y + 1] == 1))
+        {
+            return true;
+        }
+        */
+        return false;
     }
 }
