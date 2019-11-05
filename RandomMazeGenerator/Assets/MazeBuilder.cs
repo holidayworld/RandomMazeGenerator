@@ -58,12 +58,13 @@ public class MazeBuilder : MonoBehaviour
     }
 
     // Struct to make canReach() method return data more informative
+    /* 
     public struct Path
     {
         public bool reachable; // can the 2 points reach each other
         public Point[] path; // the path from point a to b (if one exists)
     }
-
+    */
     // Random number variable to be used repeatedly
     System.Random rand = new System.Random();
 
@@ -97,22 +98,22 @@ public class MazeBuilder : MonoBehaviour
 
         // Populate the maze with walls
         // 1st method is placing walls in order; 2nd method (in future) will be placing walls randomly
-        Path startToEnd = canReach(maze, start, end);
-        Path[] startToDeadEnds = new Path[numDeadEnds];
+        List<Point> startToEnd = pathMaker(maze, start, end);
+        List<Point>[] startToDeadEnds = new List<Point>[numDeadEnds];
         for (int i = 0; i < numDeadEnds; ++i)
         {
-            startToDeadEnds[i] = canReach(maze, start, deadEndsLocations[i]);
+            startToDeadEnds[i] = pathMaker(maze, start, deadEndsLocations[i]);
         }
         int[,] definedPaths = new int[maze.GetLength(0), maze.GetLength(1)];
-        for (int i = 0; i < startToEnd.path.Length; ++i)
+        for (int i = 0; i < startToEnd.Count; ++i)
         {
-            definedPaths[startToEnd.path[i].x, startToEnd.path[i].y] = 1;
+            definedPaths[startToEnd[i].x, startToEnd[i].y] = 1;
         }
         for (int i = 0; i < startToDeadEnds.Length; ++i)
         {
-            for (int j = 0; j < startToDeadEnds[i].path.Length; ++j)
+            for (int j = 0; j < startToDeadEnds[i].Count; ++j)
             {
-                definedPaths[startToDeadEnds[i].path[j].x, startToDeadEnds[i].path[j].y] = 1;
+                definedPaths[startToDeadEnds[i][j].x, startToDeadEnds[i][j].y] = 1;
             }
         }
         for (int i = 0; i < x; ++i)
@@ -215,11 +216,11 @@ public class MazeBuilder : MonoBehaviour
         }
         else if (x < 100 || y < 100)
         {
-            deadEnds = 1 + 100;
+            deadEnds = 10; // 5, 10 for 50x50      5 run speed, 10 jump speed
         }
         else
         {
-            deadEnds = 2 + d;
+            deadEnds = 20;
         }
         // Debug.Log(deadEnds);
         return deadEnds;
@@ -289,10 +290,223 @@ public class MazeBuilder : MonoBehaviour
     // maze is the maze initialized maze
     // start and end are the test points for a possible path 
     // implementation initially as DFS (will optimize later)
-    Path canReach(int[,] maze, Point start, Point end)
-    {
-        // Iterative DFS
+    List<Point> pathMaker(int[,] maze, Point start, Point end)
+    {   
         int[,] visited = new int[maze.GetLength(0), maze.GetLength(1)];
+        const int dist = 5; // Strictly vertical or horizontal distance between 2 points 
+        Point curr;
+        curr.x = start.x;
+        curr.y = start.y;
+        visited[curr.x, curr.y] = 1; 
+        List<Point> builtPath = new List<Point>();
+        builtPath.Add(curr);
+        while (visited[end.x, end.y] != 1)
+        {
+            if (curr.x > end.x && curr.y < end.y) // end point is right and up from start
+            {
+                int choice = rand.Next(0, 2);
+                if (choice == 0 && isValidPoint(curr.x, curr.y + 1, maze) && visited[curr.x, curr.y + 1] != 1) // go right
+                {
+                    curr.y = curr.y + 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }
+                else if (choice == 1 && isValidPoint(curr.x - 1, curr.y, maze) && visited[curr.x - 1, curr.y] != 1) // go up
+                {
+                    curr.x = curr.x - 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }                    
+            }
+            else if (curr.x < end.x && curr.y < end.y) // end point is right and down from start
+            {
+                int choice = rand.Next(0, 2);
+                if (choice == 0 && isValidPoint(curr.x, curr.y + 1, maze) && visited[curr.x, curr.y + 1] != 1) // go right
+                {
+                    curr.y = curr.y + 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }
+                else if (choice == 1 && isValidPoint(curr.x + 1, curr.y, maze) && visited[curr.x + 1, curr.y] != 1) // go down
+                {
+                    curr.x = curr.x + 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }                 
+            }
+            else if (curr.x > end.x && curr.y > end.y) // end point is left and up from start
+            {
+                int choice = rand.Next(0, 2);
+                if (choice == 0 && isValidPoint(curr.x, curr.y - 1, maze) && visited[curr.x, curr.y - 1] != 1) // go left
+                {
+                    curr.y = curr.y - 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }
+                else if (choice == 1 && isValidPoint(curr.x - 1, curr.y, maze) && visited[curr.x - 1, curr.y] != 1) // go up
+                {
+                    curr.x = curr.x - 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }              
+            }
+            else if (curr.x < end.x && curr.y > end.y) // end point is left and down from start
+            {
+                int choice = rand.Next(0, 2);
+                if (choice == 0 && isValidPoint(curr.x, curr.y - 1, maze) && visited[curr.x, curr.y - 1] != 1) // go left
+                {
+                    curr.y = curr.y - 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }
+                else if (choice == 1 && isValidPoint(curr.x + 1, curr.y, maze) && visited[curr.x + 1, curr.y] != 1) // go down
+                {
+                    curr.x = curr.x + 1;
+                    visited[curr.x, curr.y] = 1;
+                    builtPath.Add(curr);
+                }              
+            }
+            else if (curr.y < end.y) // end is right from start
+            {
+                if (end.y - curr.y < dist) // just go right
+                {
+                    if (isValidPoint(curr.x, curr.y + 1, maze) && visited[curr.x, curr.y + 1] != 1)
+                    {
+                        curr.y = curr.y + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                }
+                else
+                {
+                    int choice = rand.Next(0, 3);
+                    if (choice == 0 && isValidPoint(curr.x, curr.y + 1, maze) && visited[curr.x, curr.y + 1] != 1) // go right
+                    {
+                        curr.y = curr.y + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                    else if (choice == 1 && isValidPoint(curr.x - 1, curr.y, maze) && visited[curr.x - 1, curr.y] != 1) // go up
+                    {
+                        curr.x = curr.x - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }        
+                    else if (choice == 2 && isValidPoint(curr.x + 1, curr.y, maze) && visited[curr.x + 1, curr.y] != 1) // go down
+                    {
+                        curr.x = curr.x + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }           
+                }
+            }
+            else if (curr.y > end.y) // end is left from start
+            {
+                if (curr.y - end.y < dist) // just go left
+                {
+                    if (isValidPoint(curr.x, curr.y - 1, maze) && visited[curr.x, curr.y - 1] != 1)
+                    {
+                        curr.y = curr.y - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                }
+                else
+                {
+                    int choice = rand.Next(0, 3);
+                    if (choice == 0 && isValidPoint(curr.x, curr.y - 1, maze) && visited[curr.x, curr.y - 1] != 1) // go left
+                    {
+                        curr.y = curr.y - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                    else if (choice == 1 && isValidPoint(curr.x - 1, curr.y, maze) && visited[curr.x - 1, curr.y] != 1) // go up
+                    {
+                        curr.x = curr.x - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }        
+                    else if (choice == 2 && isValidPoint(curr.x + 1, curr.y, maze) && visited[curr.x + 1, curr.y] != 1) // go down
+                    {
+                        curr.x = curr.x + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }           
+                }
+            }
+            else if (curr.x > end.x) // end is up from start
+            {
+                if (curr.x - end.x < dist) // just go up
+                {
+                    if (isValidPoint(curr.x - 1, curr.y, maze) && visited[curr.x - 1, curr.y] != 1)
+                    {
+                        curr.x = curr.x - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                }
+                else
+                {
+                    int choice = rand.Next(0, 3);
+                    if (choice == 0 && isValidPoint(curr.x, curr.y - 1, maze) && visited[curr.x, curr.y - 1] != 1) // go left
+                    {
+                        curr.y = curr.y - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                    else if (choice == 1 && isValidPoint(curr.x - 1, curr.y, maze) && visited[curr.x - 1, curr.y] != 1) // go up
+                    {
+                        curr.x = curr.x - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }        
+                    if (choice == 2 && isValidPoint(curr.x, curr.y + 1, maze) && visited[curr.x, curr.y + 1] != 1) // go right
+                    {
+                        curr.y = curr.y + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }      
+                }
+            }
+            else if (curr.x < end.x) // end is down from start
+            {
+                if (end.x - curr.x < dist) // just go down
+                {
+                    if (isValidPoint(curr.x + 1, curr.y, maze) && visited[curr.x + 1, curr.y] != 1)
+                    {
+                        curr.x = curr.x + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                }
+                else
+                {
+                    int choice = rand.Next(0, 3);
+                    if (choice == 0 && isValidPoint(curr.x, curr.y - 1, maze) && visited[curr.x, curr.y - 1] != 1) // go left
+                    {
+                        curr.y = curr.y - 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }
+                    else if (choice == 1 && isValidPoint(curr.x + 1, curr.y, maze) && visited[curr.x + 1, curr.y] != 1) // go up
+                    {
+                        curr.x = curr.x + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }        
+                    if (choice == 2 && isValidPoint(curr.x, curr.y + 1, maze) && visited[curr.x, curr.y + 1] != 1) // go right
+                    {
+                        curr.y = curr.y + 1;
+                        visited[curr.x, curr.y] = 1;
+                        builtPath.Add(curr);
+                    }      
+                }
+            }
+        }
+        return builtPath;
+
+        /* 
+        // Iterative DFS
         Stack xStack = new Stack();
         Stack yStack = new Stack();
         // Stacks representing the points in the path from start to end
@@ -627,7 +841,7 @@ public class MazeBuilder : MonoBehaviour
             pathExists.path[i].y = (int)myPathY.Pop();
         }
         return pathExists;
-
+        */
 
         /* Recursive DFS 
         int[,] visited = new int[maze.GetLength(0), maze.GetLength(1)];
@@ -708,6 +922,7 @@ public class MazeBuilder : MonoBehaviour
         return false;
     }
 
+    /* 
     // Returns a maze with shuffled points to assist in randomization when placing walls
     Point[,] shuffle(int[,] maze)
     {
@@ -737,12 +952,14 @@ public class MazeBuilder : MonoBehaviour
         }
         return shuffled;
     }
+    */
 
+    /* 
     // Returns true if adding the end point to the path will result in a cube (4 points all touching)
     // A maze is a visited binary maze used to determine if cubes exist
     bool isCube(int[,] maze, Point start, Point end)
     {
-        /* 
+        
         if ((isValidPoint(end.x - 1, end.y, maze) && maze[end.x - 1, end.y] == 1) &&
         (isValidPoint(end.x, end.y - 1, maze) && maze[end.x, end.y - 1] == 1) &&
         (isValidPoint(end.x - 1, end.y - 1, maze) && maze[end.x - 1, end.y - 1] == 1))
@@ -765,7 +982,7 @@ public class MazeBuilder : MonoBehaviour
         {
             return true;
         }
-        */
         return false;
     }
+    */
 }
