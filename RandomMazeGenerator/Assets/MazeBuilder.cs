@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class MazeBuilder : MonoBehaviour
 {
+    public int[,] testMaze;
     // Start is called before the first frame update
     void Start()
     {
@@ -28,7 +29,7 @@ public class MazeBuilder : MonoBehaviour
         Debug.Log(canReach(test, begin, ending));
         */
         
-        int[,] testMaze = designMaze(50, 50, 1);
+        testMaze = designMaze(50, 50, 1);
         /* 
         for (int i = 0; i < testMaze.GetLength(0); ++i)
         {
@@ -47,6 +48,48 @@ public class MazeBuilder : MonoBehaviour
     {
         public int x; // x-axis
         public int y; // y-axis
+        public Point(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+        public Point(Point point)
+        {
+            this.x = point.x;
+            this.y = point.y;
+        }
+        public void goRight()
+        {
+            this.y++;
+        }
+        public void goLeft()
+        {
+            this.y--;
+        }
+        public void goDown()
+        {
+            this.x++;
+        }
+        public void goUp()
+        {
+            this.x--;
+        }
+        public Point getRight()
+        {
+            return new Point(this.x, this.y + 1);
+        }
+        public Point getLeft()
+        {
+            return new Point(this.x, this.y - 1);
+        }
+        public Point getDown()
+        {
+            return new Point(this.x + 1, this.y);
+        }
+        public Point getUp()
+        {
+            return new Point(this.x - 1, this.y);
+        }
     }
 
     // Struct to make canReach() method return data more informative
