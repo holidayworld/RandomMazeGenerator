@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Version 2.0 (Fast generation but lower maze quality)
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

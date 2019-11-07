@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Version 1.0 (Good maze quality but slow generation) 
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

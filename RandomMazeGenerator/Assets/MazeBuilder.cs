@@ -52,9 +52,19 @@ public class MazeBuilder : MonoBehaviour
         // Populate the maze with walls
         List<Point> startToEnd = pathMaker(maze, start, end);
         List<Point>[] startToDeadEnds = new List<Point>[numDeadEnds];
+        int currentSize = 0;
         for (int i = 0; i < numDeadEnds; ++i)
         {
-            startToDeadEnds[i] = pathMaker(maze, start, deadEndsLocations[i]);
+            if (i <= 4)
+            {
+                startToDeadEnds[i] = pathMaker(maze, start, deadEndsLocations[i]);
+                currentSize++;
+            }
+            else if (i > 4)
+            {
+                startToDeadEnds[i] = pathMaker(maze, pointChooser(startToDeadEnds, currentSize), deadEndsLocations[i]);
+                currentSize++;
+            }
         }
         int[,] definedPaths = new int[maze.GetLength(0), maze.GetLength(1)];
         for (int i = 0; i < startToEnd.Count; ++i)
@@ -436,5 +446,13 @@ public class MazeBuilder : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    // Returns a random point chosen from a random path
+    Point pointChooser(List<Point>[] paths, int size)
+    {
+        int randPath = rand.Next(0, size); // Choose the random path
+        int randPoint = rand.Next(0, paths[randPath].Count); // Choose the random point in the chosen path
+        return paths[randPath][randPoint];
     }
 }
