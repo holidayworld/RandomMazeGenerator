@@ -49,18 +49,18 @@ public class MazeBuilder : MonoBehaviour
         Point[] deadEndsLocations = deadEndPoints(x, y, numDeadEnds, start, end);
         int[,] maze = initializeMaze(x, y, start, end, deadEndsLocations);
 
-        // Populate the maze with walls
-        List<Point> startToEnd = pathMaker(maze, start, end);
-        List<Point>[] startToDeadEnds = new List<Point>[numDeadEnds];
-        int currentSize = 0;
+        // Create the connecting paths between start, end, and dead ends
+        List<Point> startToEnd = pathMaker(maze, start, end); // path from start to end
+        List<Point>[] startToDeadEnds = new List<Point>[numDeadEnds]; // array contains the paths from start to dead ends
+        int currentSize = 0; // How filled up startToDeadEnds is
         for (int i = 0; i < numDeadEnds; ++i)
         {
-            if (i <= 4)
+            if (i == 0)
             {
                 startToDeadEnds[i] = pathMaker(maze, start, deadEndsLocations[i]);
                 currentSize++;
             }
-            else if (i > 4)
+            else if (i > 0)
             {
                 startToDeadEnds[i] = pathMaker(maze, pointChooser(startToDeadEnds, currentSize), deadEndsLocations[i]);
                 currentSize++;
@@ -99,10 +99,10 @@ public class MazeBuilder : MonoBehaviour
         {
             for (int j = 0; j < maze.GetLength(1); ++j)
             {
+                float xPosition = positX + (j * blockX);
+                float zPosition = positZ + (i * blockZ);
                 if (maze[i, j] == 4) // Point is a wall
                 {
-                    float xPosition = positX + (j * blockX);
-                    float zPosition = positZ + (i * blockZ);
                     GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     wall.transform.localScale = new Vector3(blockX, blockY, blockZ);
                     wall.transform.position = new Vector3(xPosition, positY, zPosition);
@@ -110,24 +110,48 @@ public class MazeBuilder : MonoBehaviour
                 if (maze[i, j] == 1) // Point is the start
                 {
                     // Sets red cube as start point
-                    float xPosition = positX + (j * blockX);
-                    float zPosition = positZ + (i * blockZ);
                     GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     wall.transform.localScale = new Vector3(1, 1, 1);
                     wall.transform.position = new Vector3(xPosition, positY, zPosition);
                     wall.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
-                    // GameObject playableCharacter = GameObject.Find("FirstPersonCharacter");
-                    // playableCharacter.transform.position = new Vector3(xPosition, positY, zPosition);
+                    // Sets the player at the start point
+                    GameObject playableCharacter = GameObject.Find("FPSController");
+                    playableCharacter.SetActive(false);
+                    playableCharacter.transform.position = new Vector3(xPosition, positY, zPosition);
+                    playableCharacter.SetActive(true);
                 }
                 if (maze[i, j] == 2) // Point is the end
                 {
                     // Sets blue cube as end point
-                    float xPosition = positX + (j * blockX);
-                    float zPosition = positZ + (i * blockZ);
                     GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     wall.transform.localScale = new Vector3(1, 1, 1);
                     wall.transform.position = new Vector3(xPosition, positY, zPosition);
                     wall.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
+                }
+                // Creating the walls around the maze
+                if (i == 0) // top walls
+                {
+                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    wall.transform.localScale = new Vector3(blockX, blockY, blockZ);
+                    wall.transform.position = new Vector3(xPosition, positY, zPosition - 5);
+                }
+                if (i == (maze.GetLength(0) - 1)) // bottom walls
+                {
+                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    wall.transform.localScale = new Vector3(blockX, blockY, blockZ);
+                    wall.transform.position = new Vector3(xPosition, positY, zPosition + 5);
+                }
+                if (j == 0) // left walls
+                {
+                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    wall.transform.localScale = new Vector3(blockX, blockY, blockZ);
+                    wall.transform.position = new Vector3(xPosition - 5, positY, zPosition);
+                }
+                if (j == (maze.GetLength(1) - 1)) // right walls
+                {
+                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    wall.transform.localScale = new Vector3(blockX, blockY, blockZ);
+                    wall.transform.position = new Vector3(xPosition + 5, positY, zPosition);
                 }
             }
         }
