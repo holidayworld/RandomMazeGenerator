@@ -8,8 +8,11 @@ public class MazeBuilder : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        int[,] testMaze = designMaze(100, 100, 1);
+        int mazeSize = DontDestroy.size;
+        int[,] testMaze = designMaze(mazeSize, mazeSize, 1);
         createMaze(testMaze);   
+        GameObject mazeData = GameObject.Find("MazeSize");
+        Destroy(mazeData);
     }
 
     // Struct to make coordinate data easier to manage
@@ -112,7 +115,7 @@ public class MazeBuilder : MonoBehaviour
                     // Sets red cube as start point
                     GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     wall.transform.localScale = new Vector3(1, 1, 1);
-                    wall.transform.position = new Vector3(xPosition, positY, zPosition);
+                    wall.transform.position = new Vector3(xPosition + 1, positY - 1, zPosition + 1);
                     wall.GetComponent<Renderer>().material.SetColor("_Color", Color.red);
                     // Sets the player at the start point
                     GameObject playableCharacter = GameObject.Find("FPSController");
@@ -122,11 +125,9 @@ public class MazeBuilder : MonoBehaviour
                 }
                 if (maze[i, j] == 2) // Point is the end
                 {
-                    // Sets blue cube as end point
-                    GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    wall.transform.localScale = new Vector3(1, 1, 1);
-                    wall.transform.position = new Vector3(xPosition, positY, zPosition);
-                    wall.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
+                    // Sets green cube as end point
+                    GameObject end = GameObject.Find("EndPoint");
+                    end.transform.position = new Vector3(xPosition, positY - 1, zPosition);
                 }
                 // Creating the walls around the maze
                 if (i == 0) // top walls
