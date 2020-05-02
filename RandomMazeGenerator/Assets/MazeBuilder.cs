@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Use for shopping assistant
 public class MazeBuilder : MonoBehaviour
 {
     // Start is called before the first frame update
